@@ -1,0 +1,80 @@
+networks:
+  e1-net:
+    external: true
+volumes:
+  ecommerce-db-vol:
+  keycloak-vol:
+services:
+  ecommerce-api:
+    image: ecommerce-api:latest
+    build:
+      context: . #Dockerfile
+    ports:
+      - "9090:9090"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ecommerce-db:5432/db_ecommerce
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9088/realms/istad-oauth2
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://ecommerce-keycloak:8080/realms/istad-oauth2/protocol/openid-connect/certs
+      - KEYCLOAK_SERVER_URL=http://ecommerce-keycloak:8080
+    networks:
+      - e1-net
+    depends_on:
+      - ecommerce-db
+      - keycloak-e1
+  ecommerce-db:
+    image: postgres:14.23-trixie
+    container_name: ecommerce-db
+    ports:
+      - "8432:5432"
+    environment:
+      POSTGRES_DB: db_ecommerce
+      POSTGRES_USER: long
+      POSTGRES_PASSWORD: long
+    volumes:
+      - "./init_scripts:/docker-entrypoint-initdb.d"
+      - "ecommerce-db-vol:/var/lib/postgresql/data"
+    networks:
+      - e1-net
+    restart: unless-stopped
+  keycloak-e1:
+    image: quay.io/keycloak/keycloak:26.6.1
+    container_name: ecommerce-keycloak
+    environment:
+      # Database Configuration
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://ecommerce-db:5432/db_keycloak
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+
+      # Admin User
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+
+      # Production Setting
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HOSTNAME_PORT: ${KC_HOSTNAME_PORT}
+      KC_HOSTNAME_STRICT: false   # Set to true if HTTPS
+      KC_HOSTNAME_STRICT_HTTPS: false  # Set to true if HTTPS
+      KC_HOSTNAME_URL: ${KC_HOSTNAME_URL}
+      KC_HOSTNAME_ADMIN_URL: ${KC_HOSTNAME_URL}
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: true
+      KC_PROXY_HEADERS: xforwarded
+      KC_CACHE: ispn
+      KC_LOG_LEVEL: INFO
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      JAVA_OPTS_APPEND: "-Xms512m -Xmx2048m"
+    command: start  # user in production mode
+    ports:
+      - "127.0.0.1:9088:8080"
+    volumes:
+      - keycloak-vol:/opt/keycloak/data
+      - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/conf:/opt/keycloak/conf
+    networks:
+      - e1-net
+    depends_on:
+      - ecommerce-db
+    restart: unless-stopped
+

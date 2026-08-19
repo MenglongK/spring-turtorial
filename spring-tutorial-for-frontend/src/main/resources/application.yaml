@@ -1,0 +1,37 @@
+server:
+  port: 9999
+spring:
+  application:
+    name: spring-for-frontend
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9088/realms/istad-oauth2
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: spring-boot-client
+            client-secret: VYKKYJ7pnfDE6ba1F0duFkHTfMSRXAyl
+            scope:
+              - openid
+              - profile
+              - email
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: ecommerce-api
+              uri: http://localhost:8888
+              predicates:
+                - Path=/ecommerce-api/**
+              filters:
+                - RewritePath=/ecommerce-api/?(?<segment>.*), /$\{segment}
+                - TokenRelay=
+            - id: spring-with-next
+              uri: http://localhost:3001
+              predicates:
+                - Path=/**

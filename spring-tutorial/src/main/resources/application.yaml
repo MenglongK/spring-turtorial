@@ -1,0 +1,43 @@
+file-upload:
+  client-path: /file
+  server-path: /Users/menglongkeo/Documents/ISTAD-Associate/YearII/SemesterII/Chan-Chhaya/fileupload/
+  base-uri: http://localhost:${server.port}${file-upload.client-path}
+
+server:
+  port: 8888
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9088/realms/istad-oauth2
+          jwk-set-uri: http://localhost:9088/realms/istad-oauth2/protocol/openid-connect/certs
+  jpa:
+    hibernate:
+      ddl-auto: update # create, drop, alter, truncate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:8432/db_ecommerce
+    username: long
+    password: long
+  application:
+    name: ecommerce
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+keycloak:
+  server-url: http://localhost:9088
+  client-id: spring-boot-client
+  client-secret: VYKKYJ7pnfDE6ba1F0duFkHTfMSRXAyl
+  realm: istad-oauth2
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: spring-boot-client
+      client-secret: VYKKYJ7pnfDE6ba1F0duFkHTfMSRXAyl
+      use-pkce-with-authorization-code-grant: true
